@@ -29,7 +29,8 @@
     overflow-x: hidden;
     padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
   }
-  main { max-width: 440px; margin: 0 auto; padding: 36px 20px 56px; text-align: center; }
+  #bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+  main { position: relative; z-index: 1; max-width: 440px; margin: 0 auto; padding: 36px 20px 56px; text-align: center; }
 
   h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(2rem, 8vw, 2.7rem); line-height: 1.15; margin: 0 0 6px; color: var(--paper); }
   h1 em { font-style: italic; color: var(--rose); }
@@ -103,6 +104,8 @@
 </style>
 </head>
 <body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div id="ytp" style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-10px;top:-10px"></div>
 <audio id="bgm" src="musica.mp3" loop preload="auto"></audio>
 <button class="sound hidden" id="sound" aria-label="Pausar música" title="Música">🔊</button>
 
@@ -244,6 +247,60 @@
       setTimeout(() => h.remove(), 1600);
     }
   }
+
+  // Chuva de meteoros no fundo
+  (function () {
+    const c = document.getElementById('bg'), g = c.getContext('2d');
+    const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let w, h, bgStars = [], rocks = [];
+    function size() {
+      const d = window.devicePixelRatio || 1;
+      w = innerWidth; h = innerHeight;
+      c.width = w * d; c.height = h * d; g.setTransform(d, 0, 0, d, 0, 0);
+      bgStars = Array.from({ length: Math.round(w * h / 9000) }, () => ({
+        x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.3 + .3, p: Math.random() * 6.28
+      }));
+    }
+    function spawn() {
+      const big = Math.random() < .2;
+      rocks.push({
+        x: Math.random() * (w + 300), y: -40,
+        v: (big ? 11 : 6) + Math.random() * 6,
+        len: (big ? 190 : 90) + Math.random() * 80,
+        r: big ? 2.4 : 1.5,
+        pink: Math.random() < .45
+      });
+    }
+    function draw(t) {
+      g.clearRect(0, 0, w, h);
+      for (const s of bgStars) {
+        g.globalAlpha = .25 + .5 * Math.abs(Math.sin(t / 1100 + s.p));
+        g.fillStyle = '#ffe9ef';
+        g.fillRect(s.x, s.y, s.r, s.r);
+      }
+      g.globalAlpha = 1;
+      if (!calm && rocks.length < 14 && Math.random() < .07) spawn();
+      const dx = -0.62, dy = 0.78;                    // direção: para baixo e para a esquerda
+      rocks = rocks.filter(m => m.y - m.len * dy < h && m.x + m.len * .62 > -60);
+      for (const m of rocks) {
+        m.x += dx * m.v; m.y += dy * m.v;
+        const tx = m.x - dx * m.len, ty = m.y - dy * m.len;
+        const gr = g.createLinearGradient(m.x, m.y, tx, ty);
+        gr.addColorStop(0, m.pink ? 'rgba(255,170,195,1)' : 'rgba(255,255,255,1)');
+        gr.addColorStop(1, 'rgba(255,107,138,0)');
+        g.strokeStyle = gr; g.lineWidth = m.r; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(m.x, m.y); g.lineTo(tx, ty); g.stroke();
+        g.shadowColor = '#ff6b8a'; g.shadowBlur = 12;
+        g.fillStyle = '#fff';
+        g.beginPath(); g.arc(m.x, m.y, m.r, 0, 6.283); g.fill();
+        g.shadowBlur = 0;
+      }
+      requestAnimationFrame(draw);
+    }
+    size(); addEventListener('resize', size);
+    requestAnimationFrame(draw);
+  })();
+
   // Céu de estrelas que formam um coração
   const cv = document.getElementById('sky');
   const ctx = cv.getContext('2d');
@@ -310,21 +367,27 @@
   const bgm = document.getElementById('bgm');
   const soundBtn = document.getElementById('sound');
   const ytMatch = YT_URL.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/);
-  let yt = null, ytPlaying = true;
+  let yt = null, ytReady = false, ytWant = false, ytPlaying = true;
 
-  function ytCmd(func) {
-    yt.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: '' }), '*');
+  function ytCmd(func) { if (ytReady) yt[func](); }
+
+  if (ytMatch) {                                    // carrega o player já na abertura da página
+    window.onYouTubeIframeAPIReady = () => {
+      yt = new YT.Player('ytp', {
+        videoId: ytMatch[1],
+        playerVars: { controls: 0, playsinline: 1, start: MUSIC_START, loop: 1, playlist: ytMatch[1] },
+        events: { onReady: () => { ytReady = true; yt.setVolume(MUSIC_VOLUME * 100); if (ytWant) yt.playVideo(); } }
+      });
+    };
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
   }
 
   function playMusic() {
-    if (ytMatch) {                                  // música pelo YouTube (invisível)
-      const id = ytMatch[1];
-      yt = document.createElement('iframe');
-      yt.allow = 'autoplay';
-      yt.title = 'Música';
-      yt.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-10px;top:-10px';
-      yt.src = `https://www.youtube.com/embed/${id}?autoplay=1&loop=1&playlist=${id}&start=${MUSIC_START}&controls=0&enablejsapi=1`;
-      document.body.appendChild(yt);
+    if (ytMatch) {                                  // já está pronto: toca na hora do clique
+      ytWant = true;
+      ytCmd('playVideo');
       soundBtn.classList.remove('hidden');
       return;
     }
@@ -339,8 +402,8 @@
     }).catch(() => {});                            // sem arquivo: segue sem música
   }
   soundBtn.addEventListener('click', () => {
-    const on = yt ? !ytPlaying : bgm.paused;
-    if (yt) { ytCmd(on ? 'playVideo' : 'pauseVideo'); ytPlaying = on; }
+    const on = ytMatch ? !ytPlaying : bgm.paused;
+    if (ytMatch) { ytCmd(on ? 'playVideo' : 'pauseVideo'); ytPlaying = on; }
     else { on ? bgm.play() : bgm.pause(); }
     soundBtn.textContent = on ? '🔊' : '🔇';
     soundBtn.setAttribute('aria-label', on ? 'Pausar música' : 'Tocar música');

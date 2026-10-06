@@ -1,116 +1,315 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Para Kamilly ❤️</title>
-    <style>
-        body {
-            background-color: #1a1a1a;
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            overflow-x: hidden;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Para Kamilly ❤️</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #2a0f1c;
+    --bg-2: #3d1628;
+    --rose: #ff6b8a;
+    --blush: #ffd9e1;
+    --paper: #fff8f3;
+    --ink: #4a1f2e;
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'Nunito', 'Segoe UI', Tahoma, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { height: 100%; }
+  body {
+    margin: 0; min-height: 100%;
+    background: radial-gradient(ellipse at 50% 0%, var(--bg-2), var(--bg) 70%) fixed;
+    color: var(--blush);
+    font-family: var(--sans);
+    line-height: 1.7;
+    overflow-x: hidden;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  }
+  main { max-width: 440px; margin: 0 auto; padding: 36px 20px 56px; text-align: center; }
 
-        .container {
-            text-align: center;
-            padding: 20px;
-            max-width: 500px;
-        }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(2rem, 8vw, 2.7rem); line-height: 1.15; margin: 0 0 6px; color: var(--paper); }
+  h1 em { font-style: italic; color: var(--rose); }
+  .sub { margin: 0 0 28px; opacity: .8; }
 
-        h1 { color: #ff4d6d; font-size: 1.5rem; }
+  /* Foto estilo polaroid */
+  .polaroid {
+    background: var(--paper); padding: 14px 14px 18px; border-radius: 4px;
+    transform: rotate(-2deg); transition: transform .5s;
+    box-shadow: 0 18px 40px rgba(0,0,0,.45);
+    width: min(320px, 100%); margin: 0 auto;
+    touch-action: pan-y;
+  }
+  .polaroid.flip { transform: rotate(2deg); }
+  .photos { position: relative; aspect-ratio: 3 / 4; background: #e9d8d0; overflow: hidden; }
+  .photos img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .8s; }
+  .photos img.active { opacity: 1; }
+  .caption { font-family: var(--serif); font-style: italic; color: var(--ink); margin: 12px 0 0; min-height: 1.7em; }
 
-        /* Estilo do Carrossel de Fotos */
-        .photo-frame {
-            width: 300px;
-            height: 400px;
-            border: 5px solid #fff;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0px 10px 30px rgba(255, 77, 109, 0.5);
-            margin-bottom: 20px;
-            position: relative;
-        }
+  .controls { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 22px 0 6px; }
+  .arrow {
+    width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--rose);
+    background: transparent; color: var(--rose); font-size: 1.1rem; cursor: pointer;
+    transition: background .2s, color .2s;
+  }
+  .arrow:hover { background: var(--rose); color: var(--bg); }
+  .dots { display: flex; gap: 8px; }
+  .dots button { width: 10px; height: 10px; padding: 0; border-radius: 50%; border: 0; background: rgba(255,217,225,.3); cursor: pointer; transition: background .2s, transform .2s; }
+  .dots button.active { background: var(--rose); transform: scale(1.3); }
 
-        .photo-frame img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: none; /* Escondidas por padrão */
-        }
+  :focus-visible { outline: 3px solid var(--blush); outline-offset: 3px; }
 
-        .photo-frame img.active {
-            display: block;
-            animation: fadeIn 1s;
-        }
+  /* Contador */
+  .counter { margin: 38px 0 30px; }
+  .counter p { margin: 0 0 10px; opacity: .8; }
+  .units { display: flex; justify-content: center; gap: 10px; }
+  .unit { min-width: 66px; padding: 10px 6px; border: 1px solid rgba(255,107,138,.45); border-radius: 12px; }
+  .unit b { display: block; font-family: var(--serif); font-size: 1.7rem; font-weight: 600; color: var(--paper); font-variant-numeric: tabular-nums; }
+  .unit span { font-size: .8rem; opacity: .7; }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+  /* Mensagem */
+  .letter { text-align: left; background: rgba(255,248,243,.07); border-left: 3px solid var(--rose); border-radius: 0 14px 14px 0; padding: 22px 22px 8px; }
+  .letter p { margin: 0 0 14px; }
+  .letter .to { font-family: var(--serif); font-size: 1.3rem; color: var(--paper); }
+  .letter strong { color: var(--paper); }
 
-        .message {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 15px;
-            line-height: 1.6;
-            border-left: 4px solid #ff4d6d;
-        }
+  .reveal-btn {
+    margin-top: 26px; background: var(--rose); color: var(--bg); border: 0; border-radius: 999px;
+    padding: 12px 26px; font: 600 1rem var(--sans); cursor: pointer; transition: transform .2s;
+  }
+  .reveal-btn:hover { transform: scale(1.04); }
+  .hidden { display: none; }
+  .stage { margin-top: 10px; }
+  #sky { display: block; width: 100%; height: 300px; }
+  .line { opacity: 0; transform: translateY(12px); transition: opacity 1.2s ease, transform 1.2s ease; }
+  .line.in { opacity: 1; transform: none; }
+  .sign { font-family: var(--serif); font-style: italic; font-size: 1.3rem; color: var(--rose); text-align: right; }
 
-        button {
-            background-color: #ff4d6d;
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 10px;
-        }
+  /* Corações ao clicar */
+  .pop { position: fixed; pointer-events: none; font-size: 22px; animation: pop 1.2s ease-out forwards; z-index: 10; }
+  @keyframes pop { to { transform: translateY(-120px) scale(1.4); opacity: 0; } }
 
-        .heart { color: #ff4d6d; font-size: 20px; }
-    </style>
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
 </head>
 <body>
+<main>
+  <h1>9 meses com você, <em>Kamilly</em></h1>
+  <p class="sub">Alguns momentos que ficaram comigo.</p>
 
-<div class="container">
-    <h1>2 Meses com Você <span class="heart">❤️</span></h1>
-    
-    <div class="photo-frame" id="gallery">
-        <img src="IMG_1601.jpg" class="active">
-        <img src="IMG_1787.jpg">
-        <img src="IMG_2082.jpg">
-        <img src="IMG_2083.jpg">
+  <div class="polaroid" id="polaroid" aria-roledescription="carrossel" aria-label="Fotos de nós dois">
+    <div class="photos" id="gallery">
+      <img src="IMG_1601.jpg" alt="Foto 1 de nós dois" class="active">
+      <img src="IMG_1787.jpg" alt="Foto 2 de nós dois">
+      <img src="IMG_2082.jpg" alt="Foto 3 de nós dois">
+      <img src="IMG_2083.jpg" alt="Foto 4 de nós dois">
     </div>
+    <p class="caption" id="caption" aria-live="polite"></p>
+  </div>
 
-    <button onclick="nextPhoto()">Próxima Foto ✨</button>
+  <div class="controls">
+    <button class="arrow" id="prev" aria-label="Foto anterior">←</button>
+    <div class="dots" id="dots"></div>
+    <button class="arrow" id="next" aria-label="Próxima foto">→</button>
+  </div>
 
-    <div class="message">
-        <p><strong>Kamilly,</strong></p>
-        <p>Queria te dizer que você foi a <b>melhor coisa que apareceu nesse ano</b> na minha vida.</p>
-        <p>Esses dois meses que estamos nos conhecendo foram, sem dúvida, os <b>melhores momentos da minha vida</b>. Cada sorriso e cada instante ao seu lado é especial.</p>
-        <p>Feliz 2 meses de muita história que ainda vamos escrever! ❤️</p>
+  <section class="counter" aria-label="Tempo juntos">
+    <p>Já são</p>
+    <div class="units">
+      <div class="unit"><b id="d">0</b><span>dias</span></div>
+      <div class="unit"><b id="h">0</b><span>horas</span></div>
+      <div class="unit"><b id="m">0</b><span>minutos</span></div>
+      <div class="unit"><b id="s">0</b><span>segundos</span></div>
     </div>
-</div>
+  </section>
+
+  <button class="reveal-btn" id="reveal">Abrir minha mensagem 💌</button>
+
+  <div class="stage hidden" id="stage">
+    <canvas id="sky" aria-hidden="true"></canvas>
+    <section class="letter" id="letter">
+      <p class="line to">Kamilly,</p>
+      <p class="line">Tem coisa que eu não consigo dizer olhando nos seus olhos, porque você me desarma. Então eu escrevo.</p>
+      <p class="line">Em nove meses, você virou o meu lugar favorito: o abraço que acalma o dia, a risada que eu procuro sem perceber, a primeira pessoa para quem eu quero contar tudo.</p>
+      <p class="line">Eu me pego pensando em você nos momentos mais bobos e sorrindo sozinho. Com você eu me sinto em casa, e posso ser inteiro, do meu jeito.</p>
+      <p class="line">Obrigado por cuidar de mim, por me aguentar nos dias ruins e por deixar os bons inesquecíveis.</p>
+      <p class="line">Se eu pudesse escolher de novo, escolheria você. Todos os dias, nas versões boas e nas bagunçadas.</p>
+      <p class="line sign">Eu te amo. ❤️</p>
+    </section>
+  </div>
+</main>
 
 <script>
-    let currentStep = 0;
-    const photos = document.querySelectorAll('#gallery img');
+  // ====== PERSONALIZE AQUI ======
+  // Data em que vocês começaram (ano-mês-dia). Troque pela data real!
+  const START = new Date('2026-01-05T00:00:00');
+  // Uma legenda para cada foto, na mesma ordem das imagens.
+  const CAPTIONS = [
+    'O começo de tudo',
+    'Esse sorriso',
+    'Um dia que eu queria repetir',
+    'Mais um momento nosso'
+  ];
+  // ===============================
 
-    function nextPhoto() {
-        photos[currentStep].classList.remove('active');
-        currentStep = (currentStep + 1) % photos.length;
-        photos[currentStep].classList.add('active');
+  const photos = [...document.querySelectorAll('#gallery img')];
+  const caption = document.getElementById('caption');
+  const dotsBox = document.getElementById('dots');
+  const polaroid = document.getElementById('polaroid');
+  let current = 0, timer;
+
+  // Se uma foto não carregar, mostra um aviso em vez de ficar vazio
+  photos.forEach(img => img.addEventListener('error', () => {
+    img.removeAttribute('src');
+    img.alt = 'Foto não encontrada. Confira o nome do arquivo.';
+  }));
+
+  const dots = photos.map((_, i) => {
+    const b = document.createElement('button');
+    b.setAttribute('aria-label', 'Ir para a foto ' + (i + 1));
+    b.onclick = () => { show(i); restart(); };
+    dotsBox.appendChild(b);
+    return b;
+  });
+
+  function show(i) {
+    photos[current].classList.remove('active');
+    dots[current].classList.remove('active');
+    current = (i + photos.length) % photos.length;
+    photos[current].classList.add('active');
+    dots[current].classList.add('active');
+    caption.textContent = CAPTIONS[current] || '';
+    polaroid.classList.toggle('flip', current % 2 === 1);
+  }
+
+  function restart() {
+    clearInterval(timer);
+    timer = setInterval(() => show(current + 1), 5000);
+  }
+
+  document.getElementById('next').onclick = () => { show(current + 1); restart(); };
+  document.getElementById('prev').onclick = () => { show(current - 1); restart(); };
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') { show(current + 1); restart(); }
+    if (e.key === 'ArrowLeft')  { show(current - 1); restart(); }
+  });
+
+  // Deslizar o dedo no celular
+  let x0 = null;
+  polaroid.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  polaroid.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 40) { show(current + (dx < 0 ? 1 : -1)); restart(); }
+    x0 = null;
+  });
+
+  show(0);
+  restart();
+
+  // Contador de tempo juntos
+  const pad = n => String(n).padStart(2, '0');
+  function tick() {
+    let diff = Math.max(0, Math.floor((Date.now() - START) / 1000));
+    document.getElementById('d').textContent = Math.floor(diff / 86400);
+    document.getElementById('h').textContent = pad(Math.floor(diff % 86400 / 3600));
+    document.getElementById('m').textContent = pad(Math.floor(diff % 3600 / 60));
+    document.getElementById('s').textContent = pad(diff % 60);
+  }
+  tick(); setInterval(tick, 1000);
+
+  // Mensagem escondida + corações
+  function hearts(x, y) {
+    for (let i = 0; i < 6; i++) {
+      const h = document.createElement('span');
+      h.className = 'pop';
+      h.textContent = '❤️';
+      h.style.left = (x + (Math.random() * 80 - 40)) + 'px';
+      h.style.top = (y + (Math.random() * 20 - 10)) + 'px';
+      h.style.animationDelay = (i * 0.08) + 's';
+      document.body.appendChild(h);
+      setTimeout(() => h.remove(), 1600);
     }
+  }
+  // Céu de estrelas que formam um coração
+  const cv = document.getElementById('sky');
+  const ctx = cv.getContext('2d');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W, H, stars = [], shoot = null, t0 = 0;
+
+  function heartPoint(t) {
+    return { x: 16 * Math.sin(t) ** 3,
+             y: -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) };
+  }
+
+  function setupSky() {
+    const dpr = window.devicePixelRatio || 1;
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const sc = Math.min(W / 36, H / 32);
+    stars = [];
+    for (let i = 0; i < 340; i++) {
+      const f = i < 200 ? 1 : Math.sqrt(Math.random());   // contorno + preenchimento
+      const p = heartPoint(Math.random() * Math.PI * 2);
+      stars.push({
+        sx: Math.random() * W, sy: Math.random() * H,
+        tx: W / 2 + p.x * sc * f, ty: H / 2 + sc * 1.5 + p.y * sc * f,
+        d: Math.random() * 1200, r: 0.8 + Math.random() * 1.8, ph: Math.random() * 6.28
+      });
+    }
+  }
+
+  function frame(now) {
+    const el = now - t0;
+    ctx.clearRect(0, 0, W, H);
+    const beat = el > 3200 ? 1 + 0.035 * Math.sin((el - 3200) / 330) : 1;
+    for (const s of stars) {
+      const k = Math.min(Math.max((el - s.d) / 1800, 0), 1);
+      const e = 1 - Math.pow(1 - k, 3);
+      const x = W / 2 + (s.sx + (s.tx - s.sx) * e - W / 2) * (k === 1 ? beat : 1);
+      const y = H / 2 + (s.sy + (s.ty - s.sy) * e - H / 2) * (k === 1 ? beat : 1);
+      const a = 0.55 + 0.45 * Math.sin(el / 400 + s.ph);
+      ctx.beginPath();
+      ctx.arc(x, y, s.r, 0, 6.283);
+      ctx.fillStyle = `rgba(255,${190 + Math.floor(40 * a)},${210},${a})`;
+      ctx.shadowColor = '#ff6b8a'; ctx.shadowBlur = 8;
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    // estrela cadente de tempos em tempos
+    if (!shoot && el > 3500 && Math.random() < 0.004) shoot = { x: W * (0.5 + Math.random() * 0.5), y: 0, life: 0 };
+    if (shoot) {
+      shoot.life += 1; shoot.x -= 7; shoot.y += 4;
+      const g = ctx.createLinearGradient(shoot.x, shoot.y, shoot.x + 60, shoot.y - 34);
+      g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.strokeStyle = g; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(shoot.x, shoot.y); ctx.lineTo(shoot.x + 60, shoot.y - 34); ctx.stroke();
+      if (shoot.y > H || shoot.x < 0) shoot = null;
+    }
+    requestAnimationFrame(frame);
+  }
+
+  const btn = document.getElementById('reveal');
+  const stage = document.getElementById('stage');
+  btn.addEventListener('click', e => {
+    hearts(e.clientX, e.clientY);
+    btn.classList.add('hidden');
+    stage.classList.remove('hidden');
+    setupSky();
+    t0 = performance.now() - (reduce ? 5000 : 0);
+    requestAnimationFrame(frame);
+    stage.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    // a carta aparece linha por linha depois que o coração se forma
+    document.querySelectorAll('.line').forEach((l, i) =>
+      setTimeout(() => l.classList.add('in'), (reduce ? 0 : 2600) + i * (reduce ? 0 : 1800)));
+  });
+  addEventListener('resize', () => { if (!stage.classList.contains('hidden')) setupSky(); });
 </script>
-
 </body>
-
 </html>
-

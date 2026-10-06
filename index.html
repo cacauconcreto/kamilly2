@@ -82,6 +82,11 @@
   }
   .reveal-btn:hover { transform: scale(1.04); }
   .hidden { display: none; }
+  .sound {
+    position: fixed; top: calc(14px + env(safe-area-inset-top)); right: 14px; z-index: 20;
+    width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--rose);
+    background: rgba(42,15,28,.8); color: var(--paper); font-size: 1.1rem; cursor: pointer;
+  }
   .stage { margin-top: 10px; }
   #sky { display: block; width: 100%; height: 300px; }
   .line { opacity: 0; transform: translateY(12px); transition: opacity 1.2s ease, transform 1.2s ease; }
@@ -98,6 +103,9 @@
 </style>
 </head>
 <body>
+<audio id="bgm" src="musica.mp3" loop preload="auto"></audio>
+<button class="sound hidden" id="sound" aria-label="Pausar música" title="Música">🔊</button>
+
 <main>
   <h1>9 meses com você, <em>Kamilly</em></h1>
   <p class="sub">Alguns momentos que ficaram comigo.</p>
@@ -295,9 +303,53 @@
     requestAnimationFrame(frame);
   }
 
+  // Música: o navegador só deixa tocar depois de um clique, por isso começa ao abrir a mensagem
+  const YT_URL = 'https://youtu.be/lxhqCcrnTv4?si=RTxKE2pYqboI3f93';          // cole aqui o link do YouTube da música (ex.: https://www.youtube.com/watch?v=XXXXXXXXXXX). Se ficar vazio, usa o musica.mp3
+  const MUSIC_START = 0;      // segundo da música onde ela deve começar (ex.: 45 para pular a introdução)
+  const MUSIC_VOLUME = 0.6;   // de 0 a 1 (vale só para o musica.mp3)
+  const bgm = document.getElementById('bgm');
+  const soundBtn = document.getElementById('sound');
+  const ytMatch = YT_URL.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/);
+  let yt = null, ytPlaying = true;
+
+  function ytCmd(func) {
+    yt.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: '' }), '*');
+  }
+
+  function playMusic() {
+    if (ytMatch) {                                  // música pelo YouTube (invisível)
+      const id = ytMatch[1];
+      yt = document.createElement('iframe');
+      yt.allow = 'autoplay';
+      yt.title = 'Música';
+      yt.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-10px;top:-10px';
+      yt.src = `https://www.youtube.com/embed/${id}?autoplay=1&loop=1&playlist=${id}&start=${MUSIC_START}&controls=0&enablejsapi=1`;
+      document.body.appendChild(yt);
+      soundBtn.classList.remove('hidden');
+      return;
+    }
+    bgm.volume = 0;
+    if (MUSIC_START) bgm.currentTime = MUSIC_START;
+    bgm.play().then(() => {
+      soundBtn.classList.remove('hidden');
+      const fade = setInterval(() => {            // sobe o volume devagar
+        bgm.volume = Math.min(MUSIC_VOLUME, bgm.volume + 0.03);
+        if (bgm.volume >= MUSIC_VOLUME) clearInterval(fade);
+      }, 120);
+    }).catch(() => {});                            // sem arquivo: segue sem música
+  }
+  soundBtn.addEventListener('click', () => {
+    const on = yt ? !ytPlaying : bgm.paused;
+    if (yt) { ytCmd(on ? 'playVideo' : 'pauseVideo'); ytPlaying = on; }
+    else { on ? bgm.play() : bgm.pause(); }
+    soundBtn.textContent = on ? '🔊' : '🔇';
+    soundBtn.setAttribute('aria-label', on ? 'Pausar música' : 'Tocar música');
+  });
+
   const btn = document.getElementById('reveal');
   const stage = document.getElementById('stage');
   btn.addEventListener('click', e => {
+    playMusic();
     hearts(e.clientX, e.clientY);
     btn.classList.add('hidden');
     stage.classList.remove('hidden');
